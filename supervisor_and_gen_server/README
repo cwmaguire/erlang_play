@@ -1,0 +1,38 @@
+June 13, 2016
+
+I created this supervisor and gen_server with the erlvim commands:
+:ErlangGenServer
+:ErlangSupervisor
+
+Very handy!
+
+This experiment was to figure out how supervisor:terminate_child/2 worked with
+a gen_server that still had messages to handle. It _seems_ that the supervisor
+will wait until the gen_server has handled all of it's messages and then
+GenServer:terminate will be called. When I set the supervisor child shutdown
+timeout to be long enough for all messages to be handled then the gs:terminate function
+would be called. If I had the supervisor ChildSpec timeout too low then the gs:terminate
+function wasn't called.
+
+I had guessed that maybe gen_server was just busy with _one_ message and would handle
+terminate after that but it seems the gen_server will handle _all_ its messages before
+terminate can be called.
+
+Ah, what kicks off gen_server:terminate is simply a message. The docs state that if the
+_parent_ process sends an 'EXIT' message and the gen_server is trapping exits that
+gen_server:terminate will be called. There must be a case in the code that watches
+for an 'EXIT' message from the parent.
+
+Here's some output where the gen_server checks it's messages before and after sleeping
+in handle_info/2
+
+Eshell V7.2  (abort with ^G)
+1> l(sup), l(gs), gs:go().
+Info: a: messages: {messages,[b,c,d,e,f,g]}
+Info: a: messages: {messages,[b,c,d,e,f,g,{'EXIT',<0.36.0>,shutdown}]}
+Info: b: messages: {messages,[c,d,e,f,g,{'EXIT',<0.36.0>,shutdown}]}
+ok
+2>
+
+The 'EXIT' message shows up while the gen_server process was sleeping
+and the Child Spec timeout was too short for all the messages to be handled.

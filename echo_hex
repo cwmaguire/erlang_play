@@ -1,0 +1,57 @@
+#!/usr/bin/env escript
+%%! -smp enable -sname echo
+
+%% Run a bunch of echo commands to see if we can
+%% get a unicode value that will fix the "dangling
+%% bytes" that I suspect are messing bash up.
+%%
+%% Prints out all the 1 and 2-byte combinations of 00-FF but
+%% doesn't fix the shell
+%% Maybe bash is smart enough to fix up weird unicode issues?
+%% I don't even know enough about unicode and UTF-8 to know
+%% if this is sensible.
+
+main([]) ->
+  Hex = lists:seq($0,$9) ++ lists:seq($A, $F),
+  HexBytes = [[$\\, $x, C1, C2] || C1 <- Hex, C2 <- Hex],
+
+  io:format("Echoing using Hex: ~p~n", [Hex]),
+
+  [cmd("echo", ["-e", lists:flatten([B1])]) || B1 <- HexBytes],
+  [cmd("echo", ["-e", lists:flatten([B1, B2])]) || B1 <- HexBytes, B2 <- HexBytes].
+  %[cmd("echo", ["-e", lists:flatten([B1, B2, B3, B4])]) || B1 <- HexBytes, B2 <- HexBytes, B3 <- HexBytes, B4 <- HexBytes].
+  %[cmd("echo", ["-e", [$\\, $x, C1, $\\, $x, C2, $\\, $x, C3]]) || C1 <- Hex, C2 <- Hex, C3 <- Hex].
+
+cmd(Cmd, Args) ->
+    Tag = make_ref(), 
+    CmdFun = fun() ->
+                 Rv = cmd_sync(Cmd, Args),
+                 exit({Tag, Rv})
+             end,
+    {Pid, Ref} = erlang:spawn_monitor(CmdFun),
+    receive
+        {'DOWN', Ref, process, Pid, {Tag, Data}} ->
+            [_, Byte] = Args,
+            io:format("~p -> ~p~n", [Byte, Data]),
+            Data;
+        {'DOWN', Ref, process, Pid, Reason} ->
+            io:format("Received exit reason ~p from port function~n", [Reason]),
+            exit(Reason)
+    end.
+
+cmd_sync(Cmd, Args) ->
+    %io:format("Opening port to run ~p with args ~p~n", [Cmd, Args]),
+    P = open_port({spawn_executable, os:find_executable(Cmd)}, [
+            binary, use_stdio, stream, eof, {args, Args}]),
+    %io:format("Ran commands, waiting for results~n", []),
+    cmd_receive(P, []).
+
+cmd_receive(Port, Acc) ->
+    receive
+        {Port, {data, Data}} ->
+            %io:format("Received data ~p~n", [Data]),
+            cmd_receive(Port, [Data|Acc]);
+        {Port, eof}          ->
+            %io:format("Received eof~n", []),
+            {ok, lists:reverse(Acc)}
+    end.
