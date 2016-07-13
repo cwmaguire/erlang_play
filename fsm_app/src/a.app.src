@@ -1,0 +1,8 @@
+{application, a, [
+  {description, "Test app"},
+  {vsn, "0.0.1"},
+  {modules, [a_app,a_sup,a]},
+  {registered, [a_sup]},
+  {applications, [kernel,stdlib]},
+  {mod, {a_app, []}}
+]}.

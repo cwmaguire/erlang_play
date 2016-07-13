@@ -1,0 +1,17 @@
+#!/usr/bin/env escript
+%% -*- erlang -*-
+
+main(_Args) ->
+    ScriptName = (escript:script_name()),
+    ct:pal("~p: ScriptName~n\t~p~n", [?MODULE, ScriptName]),
+    %% whatever you ran this script with: ./escript_path
+
+    FirstDir = filename:dirname(escript:script_name()),
+    ct:pal("~p: FirstDir~n\t~p~n", [?MODULE, FirstDir]),
+    %% whatever you ran this script with: ./escript_path
+
+    AbsName = filename:absname(filename:dirname(escript:script_name())),
+    ct:pal("~p: AbsName~n\t~p~n", [?MODULE, AbsName]),
+
+    Dir2 = filename:dirname(filename:absname(filename:dirname(escript:script_name()))),
+    ct:pal("~p: Dir2~n\t~p~n", [?MODULE, Dir2]).

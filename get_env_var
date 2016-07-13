@@ -1,0 +1,8 @@
+#!/usr/bin/env escript
+%% -*- erlang -*-
+
+main(_Args) ->
+    %% returns either the ENV value or 'false'
+    %% Case matters
+    Env = os:getenv("BOB"),
+    ct:pal("~p: Env~n\t~p~n", [?MODULE, Env]).

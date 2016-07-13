@@ -1,0 +1,17 @@
+
+July 13, 2016
+
+  This is what I get when I run sys:get_status for an FSM
+
+3> sys:get_status(a).
+{status,<0.40.0>,
+        {module,gen_fsm},
+        [[{'$ancestors',[a_sup,<0.38.0>]},
+          {'$initial_call',{a,init,1}}],
+         running,<0.39.0>,[],
+         [{header,"Status for state machine a"},
+          {data,[{"Status",running},
+                 {"Parent",<0.39.0>},
+                 {"Logged events",[]},
+                 {"StateName",state_name}]},
+          {data,[{"StateData",{state,1,"1",<<"1">>}}]}]]}
