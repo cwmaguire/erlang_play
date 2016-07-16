@@ -1,0 +1,4 @@
+You can implement multiple behaviours in an erlang module.
+
+Note: DO NOT create modules that override built-in modules.
+      e.g. c.erl, D'OH!
