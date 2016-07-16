@@ -9,6 +9,7 @@
 -export([block_macro_three/0]).
 -export([block_macro_four/0]).
 -export([comma_macro/0]).
+-export([append_list_items/0]).
 -export([macro_punctuation/0]).
 -export([finish_punctuation/0]).
 -export([punctuation_var/0]).
@@ -80,6 +81,10 @@ block_macro_four() ->
 comma_macro() ->
     %1 = A = ?COMMA_END(1) 2, % 2 is never used
     {1,2} = {?COMMA_END(1) 2}.
+
+-define(APPEND_LIST_ITEMS, c, d).
+append_list_items() ->
+    [a, b, c, d] = [a, b, ?APPEND_LIST_ITEMS].
 
 %% No problem having the macro output partial code
 -define(LC(Var, Num), [Var || Var <- lists:seq(1,Num)],).
