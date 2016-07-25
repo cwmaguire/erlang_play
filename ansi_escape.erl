@@ -1,7 +1,7 @@
 %% @doc
 %% Screwing around with terminal effects
 %% https://en.wikipedia.org/wiki/ANSI_escape_code
--module(term_fx).
+-module(ansi_escape).
 
 -export([print/0]).
 -export([error/1]).
