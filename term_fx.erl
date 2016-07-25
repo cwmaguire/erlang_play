@@ -4,7 +4,7 @@
 -module(term_fx).
 
 -export([print/0]).
--export([blue_on_white/1]).
+-export([error/1]).
 -export([format/2]).
 -export([format/3]).
 -export([format/4]).
@@ -17,8 +17,8 @@ print() ->
   Fx = [1,4,7,9],
   io:format(lists:flatten([["\e[", ?I2S(BG), $;, ?I2S(FG), $;, ?I2S(E), "m The lazy brown whatever with (", ?I2S(BG), ",", ?I2S(FG), ",", ?I2S(E), ") \e[0m~n"] || BG <- BGs, FG <- FGs, E <- Fx])).
 
-blue_on_white(String) ->
-    io:format("\e[34;47;1m " ++ String ++ " (with bold) \e[0m~n\e[34;47m " ++ String ++ " (without bold)\e[0m~n").
+error(Error) ->
+    format(Error, w, r, [bold]).
 
 format(String, FG) ->
     format(String, FG, b).
@@ -50,6 +50,7 @@ fg(w) ->
 bg(Background) ->
     10 + fg(Background).
 
+%% Trailing semi-colons will screw up the ANSI escape code
 code(bold) ->
     ";1";
 code(underline) ->
