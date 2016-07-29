@@ -1,0 +1,61 @@
+#!/usr/bin/env escript
+%% -*- erlang -*-
+%%! -smp enable -sname calories -mnesia debug verbose
+main([]) ->
+    {ok, FileIn} = file:open("/home/lulu/Downloads/calories.csv", [read, read_ahead, binary]),
+    {ok, FileOut} = file:open("/home/lulu/Downloads/calories_2.csv", [write]),
+    update_time({FileIn, FileOut}, file:read_line(FileIn), 0, am),
+    ok = file:close(FileIn),
+    ok = file:close(FileOut).
+
+update_time(_, eof, _, _) ->
+    ok;
+update_time(Files = {FileIn, FileOut}, {ok, Line = <<H:1/binary, $:, Rest/binary>>}, LastHour, am) ->
+    Hour = binary_to_integer(H),
+    case Hour >= LastHour of
+        true ->
+            io:format("Read \"~p\" where Hour is ~p and last hour is ~p, writing it back out~n", [Line, Hour, LastHour]),
+            file:write(FileOut, Line),
+            update_time(Files, file:read_line(FileIn), Hour, am);
+        false ->
+            NewLine = <<(integer_to_binary(binary_to_integer(H) + 12))/binary, $:, Rest/binary>>,
+            io:format("Read \"~p\" where Hours is ~p and last hour is ~p, writing out \"~p\"~n", [Line, Hour, LastHour, NewLine]),
+            file:write(FileOut, NewLine),
+            update_time(Files, file:read_line(FileIn), Hour, pm)
+    end;
+update_time(Files = {FileIn, FileOut}, {ok, Line = <<H:2/binary, $:, Rest/binary>>}, LastHour, am) ->
+    Hour = binary_to_integer(H),
+    case Hour > 12 orelse Hour >= LastHour of
+        true ->
+            io:format("Read \"~p\" where Hour is ~p and last hour is ~p, writing it back out~n", [Line, Hour, LastHour]),
+            file:write(FileOut, Line),
+            update_time(Files, file:read_line(FileIn), Hour, am);
+        false ->
+            NewLine = <<(integer_to_binary(binary_to_integer(H) + 12))/binary, $:, Rest/binary>>,
+            io:format("Read \"~p\" where Hours is ~p and last hour is ~p, writing out \"~p\"~n", [Line, Hour, LastHour, NewLine]),
+            file:write(FileOut, NewLine),
+            update_time(Files, file:read_line(FileIn), Hour, pm)
+    end;
+update_time(Files = {FileIn, FileOut}, {ok, Line = <<H:1/binary, $:, Rest/binary>>}, _, pm) ->
+    Hour = binary_to_integer(H),
+    NewLine = <<(integer_to_binary(binary_to_integer(H) + 12))/binary, $:, Rest/binary>>,
+    io:format("Read \"~p\" where Hours is ~p and we've switched to pm, writing out \"~p\"~n", [Line, Hour, NewLine]),
+    file:write(FileOut, NewLine),
+    update_time(Files, file:read_line(FileIn), Hour, pm);
+update_time(Files = {FileIn, FileOut}, {ok, Line = <<H:2/binary, $:, Rest/binary>>}, _, pm) ->
+    Hour = binary_to_integer(H),
+    case Hour > 12 of
+        true ->
+            io:format("Read \"~p\" where Hour ~p is > 12, writing it back out~n", [Line, Hour]),
+            file:write(FileOut, Line),
+            update_time(Files, file:read_line(FileIn), Hour, am);
+        false ->
+            NewLine = <<(integer_to_binary(binary_to_integer(H) + 12))/binary, $:, Rest/binary>>,
+            io:format("Read \"~p\" where Hours is ~p and we've switched to pm, writing out \"~p\"~n", [Line, Hour, NewLine]),
+            file:write(FileOut, NewLine),
+            update_time(Files, file:read_line(FileIn), Hour, pm)
+    end;
+update_time(Files = {FileIn, FileOut}, {ok, Line}, _, _) ->
+    io:format("Read \"~p\" with no time found. Writing it back out and switching to 0 am~n", [Line]),
+    file:write(FileOut, Line),
+    update_time(Files, file:read_line(FileIn), 0, am).
