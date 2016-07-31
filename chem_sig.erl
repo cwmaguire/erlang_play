@@ -1,18 +1,22 @@
+%% @doc I was reading "Reinventing Man: the robot becomes reality" and got
+%% inspired to model some chemical signaling. The idea is that molecules
+%% are coming through the blood stream to a receptor site. The more
+%% receptors that fill up the stronger the nerve signal gets. The receptor
+%% only has a certain number of receptors so the strength gets maxed out
+%% when the receptors all get full. The molecules only last for so long
+%% before disappearing (for whatever reason) and the signal starts to
+%% degrade. The rates of the molecules entering the blood stream and the
+%% "average" age of the molecules can be controlled.
+%%
+%% c("chem_sig.erl").
+%% chem_sig:run().
+%% producer ! {rate, 900}.
 -module(chem_sig).
 
 -export([run/0]).
 
 run() ->
     random:seed(os:timestamp()),
-    %% receptors
-    %%   release molecules after a variable timeout
-    %% molecules
-    %%   random kind, random amount?
-    %% nerves
-    %%  constant signal? boolean? flip a switch? update a counter?
-    %%  increment on signals? threshold?
-    %% blood vessel
-    %%   holds all the receptors
 
     SiteFun = site_fun(10, a, 3000),
     SitePid = spawn(SiteFun),
