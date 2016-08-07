@@ -21,6 +21,7 @@
 -record(png, {header :: #header{},
               background,
               physical,
+              srgb :: integer(),
               text = [] :: list(binary()),
               data = <<>> :: binary(),
               other = [] :: list(#chunk{})}).
@@ -99,6 +100,15 @@ read_chunks(<<9:32/integer,
     io:format("pHYs: ~s~n~n",
               [aspect(X, Y, Unit)]),
     read_chunks(Rest, Png#png{physical = {X, Y, Unit}});
+read_chunks(<<1:32/integer,
+              "sRGB",
+              Intent:8/integer,
+              _CRC:4/binary,
+              Rest/binary>>,
+            Png) ->
+    io:format("sRGB: rendering intent: ~p (~s)~n~n",
+              [Intent, rendering_intent(Intent)]),
+    read_chunks(Rest, Png#png{srgb = Intent});
 read_chunks(<<ChunkLength:32/integer,
               "tEXt",
               Data:ChunkLength/binary,
@@ -179,3 +189,12 @@ aspect(X, Y, _Unit = ?UNKNOWN_UNIT) ->
 aspect(X, Y, _Unit = ?METER) ->
     <<"X - ", (integer_to_binary(X))/binary, "/meter; "
       "Y - ", (integer_to_binary(Y))/binary, "/meter">>.
+
+rendering_intent(0) ->
+    <<"Perceptual">>;
+rendering_intent(1) ->
+    <<"Relative colorimetric">>;
+rendering_intent(2) ->
+    <<"Saturation">>;
+rendering_intent(3) ->
+    <<"Absolute colorimetric">>.
