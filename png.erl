@@ -3,6 +3,8 @@
 -export([decode/1]).
 
 -define(MAX_SAMPLE_SIZE, 10).
+-define(UNKNOWN_UNIT, 0).
+-define(METER, 1).
 
 decode(Path) ->
     {ok, Data} = file:read_file(Path),
@@ -11,6 +13,7 @@ decode(Path) ->
     read_chunks(Rest).
 
 read_chunks(<<>>) ->
+    io:format("Ran out of data, missing IEND.~n~n"),
     ok;
 read_chunks(<<13:32,
               "IHDR",
@@ -24,13 +27,41 @@ read_chunks(<<13:32,
               _CRC:4/binary,
               Rest/binary>>) ->
     io:format("IHDR~n\tW: ~p, H: ~p~n\t"
-              "Bit depth: ~p, Color type: ~p~n\t"
+              "Bit depth: ~p, Color type: ~p (~s)~n\t"
               "Compression Method: ~p~n\t"
-              "Filter type: ~p~n\t"
-              "Interlace Method: ~p~n~n",
+              "Filter type: ~p (~s)~n\t"
+              "Interlace Method: ~p (~s)~n~n",
               [Width, Height, BitDepth,
-               ColorType, Compression,
-               Filter, Interlace]),
+               ColorType, color_type(ColorType),
+               Compression,
+               Filter, filter_type(Filter),
+               Interlace, interlace_method(Interlace)]),
+    read_chunks(Rest);
+read_chunks(<<0:32/integer,
+              "IEND",
+              _CRC:4/binary>>) ->
+    io:format("~nEND~n~n");
+read_chunks(<<6:32/integer,
+              "bKGD",
+              R:16/integer,
+              G:16/integer,
+              B:16/integer,
+              _CRC:4/binary,
+              Rest/binary>>) ->
+    io:format("Background colour: ~s,~s,~s~n~n",
+              [integer_to_binary(R),
+               integer_to_binary(G),
+               integer_to_binary(B)]),
+    read_chunks(Rest);
+read_chunks(<<9:32/integer,
+              "pHYs",
+              X:32/integer,
+              Y:32/integer,
+              Unit:8/integer,
+              _CRC:4/binary,
+              Rest/binary>>) ->
+    io:format("pHYs: ~s~n~n",
+              [aspect(X, Y, Unit)]),
     read_chunks(Rest);
 read_chunks(<<ChunkLength:32/integer,
               "tEXt",
@@ -70,3 +101,36 @@ read_chunks(<<ChunkLength:32/integer,
     read_chunks(Rest);
 read_chunks(_Data) ->
     io:format("Unrecognized data, decode failed~n").
+
+color_type(0) ->
+    <<"Grayscale (1,2,4,8,16)">>;
+color_type(2) ->
+    <<"RGB triples (8,16)">>;
+color_type(3) ->
+    <<"Palate index (1,2,4,8)">>;
+color_type(4) ->
+    <<"Grayscale /w alpha (8,16)">>;
+color_type(6) ->
+    <<"RGB /w alpha (8,16)">>.
+
+filter_type(0) ->
+   <<"none">>;
+filter_type(1) ->
+   <<"sub">>;
+filter_type(2) ->
+   <<"up">>;
+filter_type(3) ->
+   <<"average">>;
+filter_type(4) ->
+   <<"paeth">>.
+
+interlace_method(0) ->
+    <<"None">>;
+interlace_method(1) ->
+    <<"Adam7">>.
+
+aspect(X, Y, _Unit = ?UNKNOWN_UNIT) ->
+    <<(integer_to_binary(X))/binary, $:, (integer_to_binary(Y))/binary>>;
+aspect(X, Y, _Unit = ?METER) ->
+    <<"X - ", (integer_to_binary(X))/binary, "/meter; "
+      "Y - ", (integer_to_binary(Y))/binary, "/meter">>.
