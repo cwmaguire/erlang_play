@@ -1,11 +1,16 @@
 -module(png).
 
--export([decode/1,
-         data/1]).
+-export([read/1]).
+-export([data/1]).
+%-export([sub/2]).
 
 -define(MAX_SAMPLE_SIZE, 10).
 -define(UNKNOWN_UNIT, 0).
 -define(METER, 1).
+-define(RGB, 2).
+-define(RGBA, 6).
+-define(NO_FILTER, 0).
+-define(SUB_FILTER, 1).
 
 -record(header, {width :: integer(),
                  height :: integer(),
@@ -18,22 +23,30 @@
 -record(chunk, {type :: binary(),
                 data :: binary()}).
 
+-record(px, {r = 0 :: integer(),
+             g = 0 :: integer(),
+             b = 0 :: integer(),
+             a :: integer()}).
+
 -record(png, {header :: #header{},
               background,
               physical,
               srgb :: integer(),
               text = [] :: list(binary()),
               data = <<>> :: binary(),
+              pixels = [] :: [#px{}],
               other = [] :: list(#chunk{})}).
 
 data(#png{data = Data}) ->
     Data.
 
-decode(Path) ->
+read(Path) ->
     {ok, Data} = file:read_file(Path),
     <<A:8, B:8, C:8, D:8, E:8, F:8, G:8, H:8, Rest/binary>> = Data,
     io:format("Preamble: ~p, ~p, ~p, ~p, ~p, ~p, ~p, ~p~n~n", [A, B, C, D, E, F, G, H]),
-    _Png = read_chunks(Rest, #png{}).
+    CompressedPng = read_chunks(Rest, #png{}),
+    Pixels = pixels(CompressedPng, inflate(CompressedPng#png.data)),
+    CompressedPng#png{pixels = Pixels}.
 
 read_chunks(<<>>, Png = #png{text = Text, other = Other}) ->
     io:format("Ran out of data, missing IEND.~n~n"),
@@ -50,7 +63,7 @@ read_chunks(<<13:32,
               Interlace:8/integer,
               _CRC:4/binary,
               Rest/binary>>,
-           Png) ->
+            Png) ->
     io:format("IHDR~n\tW: ~p, H: ~p~n\t"
               "Bit depth: ~p, Color type: ~p (~s)~n\t"
               "Compression Method: ~p~n\t"
@@ -72,7 +85,7 @@ read_chunks(<<13:32,
 read_chunks(<<0:32/integer,
               "IEND",
               _CRC:4/binary>>,
-           Png = #png{text = Text, other = Other}) ->
+            Png = #png{text = Text, other = Other}) ->
     io:format("~nEND~n~n"),
     Png#png{text = lists:reverse(Text),
             other = lists:reverse(Other)};
@@ -198,3 +211,82 @@ rendering_intent(2) ->
     <<"Saturation">>;
 rendering_intent(3) ->
     <<"Absolute colorimetric">>.
+
+inflate(Compressed) ->
+
+    Z = zlib:open(),
+    ok = zlib:inflateInit(Z),
+    Uncompressed = zlib:inflate(Z, Compressed),
+    zlib:close(Z),
+    iolist_to_binary(Uncompressed).
+
+pixels(#png{header = #header{width = Width,
+                             bit_depth = BitDepth,
+                             color_type = ColorType}},
+       Data) ->
+    BytesPerPixel = bpp(ColorType, BitDepth),
+    PixelFun = fun(Scanline) ->
+                       pixels(BytesPerPixel, Scanline)
+               end,
+    lists:map(PixelFun, scanlines(Data, Width, BytesPerPixel));
+
+pixels(BytesPerPixel,
+       _Scanline = <<FilterType:8/integer, Bytes/binary>>) ->
+    FilterFun = filter_fun(FilterType),
+    Bytes = FilterFun(BytesPerPixel, Bytes),
+    pixels_(BytesPerPixel, Bytes, _Pixels = []).
+
+pixels_(_, <<>>, Pixels) ->
+    lists:reverse(Pixels);
+pixels_(BytesPerPixel, Bytes, Pixels) ->
+    <<PixelBytes:BytesPerPixel/binary, Rest/binary>> = Bytes,
+    pixels_(BytesPerPixel, Rest, [pixel(PixelBytes) | Pixels]).
+
+pixel(<<R:8/integer, G:8/integer, B:8/integer>>) ->
+    #px{r = R, g = G, b = B};
+pixel(<<R:8/integer, G:8/integer, B:8/integer, A:8/integer>>) ->
+    #px{r = R, g = G, b = B, a = A};
+pixel(<<R:16/integer, G:16/integer, B:16/integer>>) ->
+    #px{r = R, g = G, b = B};
+pixel(<<R:16/integer, G:16/integer, B:16/integer, A:16/integer>>) ->
+    #px{r = R, g = G, b = B, a = A}.
+
+bpp(?RGBA, 8) ->
+    4;
+bpp(?RGBA, 16) ->
+    8;
+bpp(?RGB, 8) ->
+    3;
+bpp(?RGB, 16) ->
+    6.
+
+scanlines(Data, PixelsPerLine, BytesPerPixel) ->
+    FilterBytes = 1,
+    BytesPerLine = FilterBytes + (PixelsPerLine * BytesPerPixel),
+    scanlines(Data, {BytesPerLine, []}).
+
+scanlines(<<>>, {_, Scanlines}) ->
+    lists:reverse(Scanlines);
+scanlines(Data, {BytesPerLine, Scanlines}) ->
+    <<Line:BytesPerLine/binary, Rest/binary>> = Data,
+    scanlines(Rest, {BytesPerLine, [Line | Scanlines]}).
+
+filter_fun(?NO_FILTER) ->
+    fun(_BytesPerPixel, Bytes) -> Bytes end;
+filter_fun(?SUB_FILTER) ->
+    fun sub/2.
+
+%% current byte minus previous aligned byte
+sub(BytesPerPixel, Scanline) ->
+    <<FirstBytes:BytesPerPixel/binary, Rest/binary>> = Scanline,
+    sub(FirstBytes, FirstBytes, Rest).
+
+sub(_, ProcessedBytes, <<>>) ->
+    ProcessedBytes;
+sub(<<SubtractedByte:1/binary, SubBytes/binary>>,
+    ProcessedBytes,
+    <<FilteredByte:1/binary, Rest/binary>>) ->
+    Byte = (FilteredByte + SubtractedByte) div 256,
+    sub(<<SubBytes/binary, Byte/binary>>,
+        <<ProcessedBytes/binary, Byte/binary>>,
+        Rest).
