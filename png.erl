@@ -46,7 +46,7 @@ read(Path) ->
     io:format("Preamble: ~p, ~p, ~p, ~p, ~p, ~p, ~p, ~p~n~n", [A, B, C, D, E, F, G, H]),
     CompressedPng = read_chunks(Rest, #png{}),
     Pixels = pixels(CompressedPng, inflate(CompressedPng#png.data)),
-    CompressedPng#png{pixels = Pixels}.
+    CompressedPng#png{pixels = Pixels, data = <<>>}.
 
 read_chunks(<<>>, Png = #png{text = Text, other = Other}) ->
     io:format("Ran out of data, missing IEND.~n~n"),
@@ -128,7 +128,7 @@ read_chunks(<<ChunkLength:32/integer,
               _CRC:4/binary,
               Rest/binary>>,
             Png) ->
-    io:format("tEXt: ~p~n", [binary:replace(Data, <<0>>, <<":">>)]),
+    io:format("tEXt: ~p~n", [binary:replace(Data, <<0>>, <<" | ">>)]),
     Text = [Data | Png#png.text],
     read_chunks(Rest, Png#png{text = Text});
 read_chunks(<<ChunkLength:32/integer,
@@ -226,15 +226,14 @@ pixels(#png{header = #header{width = Width,
        Data) ->
     BytesPerPixel = bpp(ColorType, BitDepth),
     PixelFun = fun(Scanline) ->
-                       pixels(BytesPerPixel, Scanline)
+                       pixels(Scanline, BytesPerPixel)
                end,
     lists:map(PixelFun, scanlines(Data, Width, BytesPerPixel));
 
-pixels(BytesPerPixel,
-       _Scanline = <<FilterType:8/integer, Bytes/binary>>) ->
+pixels(<<FilterType, Bytes/binary>>, BytesPerPixel) ->
     FilterFun = filter_fun(FilterType),
-    Bytes = FilterFun(BytesPerPixel, Bytes),
-    pixels_(BytesPerPixel, Bytes, _Pixels = []).
+    _Bytes = FilterFun(BytesPerPixel, Bytes).
+    %pixels_(BytesPerPixel, Bytes, _Pixels = []).
 
 pixels_(_, <<>>, Pixels) ->
     lists:reverse(Pixels);
