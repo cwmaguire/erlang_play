@@ -48,6 +48,7 @@
   - Building a CSV of user data? (.erl version?)
 - mines.erl
   - Find the optimal square to click in Minesweeper
+  - Moved to its [own project](https://github.com/cwmaguire/mine_solver)
 - mult_behaviours
   - Checking if I can implement multiple behaviours
 - png
