@@ -1,0 +1,23 @@
+#!/usr/bin/env escript
+%% -*- erlang -*-
+
+-define(D, "~6.. b ").
+-define(X, "~6.. ts ").
+
+main(_Args) ->
+  io:setopts([{encoding, unicode}]),
+  Bases = lists:seq(0, 256),
+  Offsets = [offset(X) || X <- lists:seq(0, 16)],
+  io:format(user, "Offsets = ~p~n", [Offsets]),
+  io:format("~n~n"),
+  [print(X, Offsets) || X <- Bases].
+
+print(X, Offsets) ->
+  RowFields = [[X]] ++ [[X + Y] || Y <- Offsets],
+  io:format(" ~w  " ?D ?D ?D ?D ?D ?D ?D ?D ?D ?D ?D ?D ?D ?D ?D ?D ?D"~n",
+            [RF || [RF] <- RowFields]),
+  io:format("~w " ?X ?X ?X ?X ?X ?X ?X ?X ?X ?X ?X ?X ?X ?X ?X ?X ?X"~n~n",
+            [RF || RF <- RowFields]).
+
+offset(X) ->
+    128 * X.
