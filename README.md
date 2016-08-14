@@ -7,7 +7,6 @@
 - build stuff
   - Makefile
   - erlang.mk
-- README
 - access_non_exported_fully_qualified_fun.erl
 - ansi_escape.erl
   - Screwing around with terminal effects
