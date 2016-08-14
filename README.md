@@ -65,5 +65,7 @@
   - types.erl
 - supervisor_and_gen_server
   - What happens when you supervisor:terminate_child on a gen_server with messages in its mailbox
+- unicode
+  - Escript that prints out a table of unicode characters.
 - uninstall_meck.erl
   - Confirming how uninstall_meck works
