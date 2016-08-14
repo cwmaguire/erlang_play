@@ -3,6 +3,7 @@
 ## Various tests and experiments in Erlang
 
 - deep/deep/deep/deep/deep/deep/ebin
+  - -pa foo/*/ebin only goes one level deep
 - fsm_app	Whole bunch of stuff
 - supervisor_and_gen_server
 - build stuff
