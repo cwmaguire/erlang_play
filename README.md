@@ -69,3 +69,5 @@
   - Escript that prints out a table of unicode characters.
 - uninstall_meck.erl
   - Confirming how uninstall_meck works
+- utf8
+  - Trying to write out a table of utf8 characters
