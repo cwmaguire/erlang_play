@@ -1,0 +1,13 @@
+#!/usr/bin/env escript
+%% -*- erlang -*-
+
+%% Confirming that an escript module can reference
+%% a compiled erlang module in the same directory.
+%% (I'm on a plane and don't have access to the
+%% internet to check)
+%%
+%% See escript_module.erl
+
+main(_Args) ->
+    Result = escript_module:test(),
+    io:format(user, "Result = ~p~n", [Result]).
