@@ -15,6 +15,7 @@
 -export([lc/0]).
 -export([lc2/0]).
 -export([chars/0]).
+-export([quote/0]).
 
 %% Simply wanted to see if there was a problem calling record_info
 %% from inside a macro
@@ -117,3 +118,8 @@ finish_punctuation() ->
 -define(PUNCTUATION_VAR(PUNCTUATION), PUNCTUATION).
 punctuation_var() ->
     [{[a]}] = [{begin [a ?PUNCTUATION_VAR(]end}]).
+
+-define(Q(S), "\"S\"").
+quote() ->
+    %"\"a\"" = ?Q(a).
+    "\"S\"" = ?Q(a). % not what I wanted, wanted "\"a\""
