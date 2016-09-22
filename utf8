@@ -1,0 +1,42 @@
+#!/usr/bin/env escript
+%% -*- erlang -*-
+
+%% Write utf8 codes to a file
+%% This didn't work out quite like I expected. I'm not sure
+%% if Erlang is writing the utf8 codes out properly of if
+%% I'm not crafting the utf8 codes correctly.
+
+main(_Args) ->
+    case filelib:is_file("a") of
+        true ->
+            ok = file:delete("a");
+        _ ->
+            ok
+    end,
+    {ok, F} = file:open("a", [write, {encoding, utf8}]),
+    Pairs = [{X, Y} || X <- lists:seq(0,31), Y <- lists:seq(1,63)],
+    io:format(user, "Pairs = ~p~n", [Pairs]),
+    io:format("i2b: ~p ~n", [i2b(<<110:3>>, 10)]),
+    Bytes = lists:foldl(fun({X,Y}, Acc) -> <<Acc/binary,
+                                             (hex(X + 192, Y + 128))/binary,
+                                             (i2b(<<110:3>>, X))/binary,
+                                             $ ,
+                                             (i2b(<<10:2>>, Y))/binary,
+                                             $ ,
+                                             110:3, X:5, 10:2, Y:6, 10/integer,
+                                             "ʘ">>
+                        end, <<>>, Pairs),
+    io:format(user, "Bytes = ~p~n", [Bytes]),
+    file:write(F, Bytes),
+    ok = file:close(F).
+
+i2b(Prefix, I) ->
+    SuffixSize = 8 - bit_size(Prefix),
+    <<Int/integer>> = <<Prefix/bitstring, I:SuffixSize>>,
+    list_to_binary(integer_to_list(Int)).
+
+hex(A, B) ->
+    list_to_binary([io_lib:format("~2.16.0B", [A]),
+                    io_lib:format("~2.16.0B", [B]), " "]).
+
+

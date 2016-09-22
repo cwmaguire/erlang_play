@@ -1,7 +1,0 @@
-erlang_play
-
-Some testing I've done with Erlang.
-
-macro_test.erl is interesting.
-
-See ANSI escape codes in ansi_escape.erl
