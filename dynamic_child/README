@@ -1,0 +1,28 @@
+Here's a snippet of REPL showing that dynamically adding children to a one-to-one
+supervisor works. It assumes that sup.erl and gs.erl are compiled.
+
+24> f(S), {ok, S} = sup:start_link().
+{ok,<0.115.0>}
+25> sup:start_child(a).
+{ok,<0.117.0>}
+26> sup:start_child(b).
+{ok,<0.119.0>}
+27> sup:start_child(c).
+{ok,<0.121.0>}
+28> a ! a.
+Info: a: messages: {messages,[]}
+a
+Info: a: messages: {messages,[]}
+29> b ! a.
+Info: a: messages: {messages,[]}
+a
+Info: a: messages: {messages,[]}
+30> c ! a.
+Info: a: messages: {messages,[]}
+a
+Info: a: messages: {messages,[]}
+31> c ! c.
+Info: c: messages: {messages,[]}
+c
+Info: c: messages: {messages,[]}
+32>
