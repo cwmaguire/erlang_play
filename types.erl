@@ -10,7 +10,7 @@
 -export(['#f'/1]).
 -export([g/1]).
 -export([h/1, h2/1]).
--export([i/1, i2/1, i3/1, i4/1, i5/1, i6/1]).
+-export([i/1, i2/1, i2b/1, i3/1, i4/1, i5/1, i6/1]).
 -export([j/1]).
 
 -type '#abc'() :: {}. %% no warning
@@ -80,6 +80,13 @@ i(Map) ->
 %% Dialyzer: Invalid type specification for function types:i2/1. The success typing is (#{'c':=_, _=>_}) -> any()
 -spec i2(map_()) -> integer().
 i2(#{c := C}) ->
+    C.
+
+%% Catches match inside the function as well
+%% Dialyzer: Invalid type specification for function types:i2/1. The success typing is (#{'c':=_, _=>_}) -> any()
+-spec i2b(map_()) -> integer().
+i2b(Map) ->
+    #{c := C} = Map,
     C.
 
 %% Dialyzer: Invalid type specification for function types:i3/1. The success typing is (#{'a':=_, 'c':=_, _=>_}) -> {_,_}
