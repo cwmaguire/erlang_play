@@ -125,6 +125,8 @@ punctuation_var() ->
     [{[a]}] = [{begin [a ?PUNCTUATION_VAR(]end}]).
 
 -define(Q(S), "\"S\"").
+-define(Q2(S), "\"" ??S "\"").
 quote() ->
     %"\"a\"" = ?Q(a).
-    "\"S\"" = ?Q(a). % not what I wanted, wanted "\"a\""
+    "\"S\"" = ?Q(a), % not what I wanted, wanted "\"a\""
+    "\"a\"" = ?Q2(a). % does what I want
