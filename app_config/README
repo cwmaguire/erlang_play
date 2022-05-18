@@ -1,0 +1,41 @@
+2022-05-18
+
+Intro
+===========================
+
+I created this app to test out how .config files were used in erl and ct_run. It has a `cfg` gen_server which is just an interface to a stack. Note that this also demonstrates how to setup and run an app without rebar, erlang.mk or relx. Note also that the .app file needs to go in the ebin/ directory.
+
+Running Tests and App
+===========================
+
+run the tests with:
+    ct_run -pa ebin -config test.config -dir test -erl_args -config sys.config
+
+-erl_args is a separate option: all options after it are passed to erlang.
+
+Run the app with:
+    erl -pa ebin -config sys.config
+    > application:start(cfg).
+    > cfg:get().
+
+NOTE: application:get_env(Var) does _not_ get all env vars for app Var, it gets the
+Var env value for the _current_ app. I can't remember how it determines what the current app is.
+
+Findings
+===========================
+
+if you use
+    -config file.config
+with ct_run, you need to use
+    ct:get_config/1,2,3 or ct:require/1,2
+to access the values
+
+However, if you use
+    -config file.config
+with erl, it will override the config values in an applications .app file
+
+BUT, if you do
+    $ct_run -pa ebin -config test.config -dir test -erl_args -config sys.config
+then it will do _both_.
+
+It's really confusing how both ct and erlang both use .config files differently.
