@@ -19,12 +19,14 @@ init_per_suite(Config) ->
     App = application:get_env(cfg, app),
     Test = application:get_env(cfg, test),
     Sys = application:get_env(cfg, sys),
+    Map = application:get_env(cfg, map),
     ct:pal("Config:~n"
            "~p: ~p~n"
            "~p: ~p~n"
            "~p: ~p~n"
+           "~p: ~p~n"
            "~p: ~p~n",
-           [a, A, app, App, test, Test, sys, Sys]),
+           [a, A, app, App, test, Test, sys, Sys, map, Map]),
 
     application:start(cfg),
     Config.
