@@ -1,5 +1,14 @@
 -module(a).
 
+% 2023-09-01
+%
+% Trying out complicated--for me, anyway--trace patterns along with the
+% {message,_} function.
+%
+% Run with a:s()
+%
+% Cancels any running tracer and clears trace patterns.
+
 -export([s/0]).
 -export([flush/0]).
 -export([t/0]).
@@ -21,7 +30,8 @@ s() ->
                    %%{['_','$1'],[{'/=',{hd,'$1'},traceme2}],[{message,"no match"}]},
                    {['_', [a]], [], [{message, a}]}],
   dbg:tpl(io, format, 2, TracePatterns),
-  t().
+  t(),
+  dbg:stop_clear().
 
 flush() ->
     flush([]).
