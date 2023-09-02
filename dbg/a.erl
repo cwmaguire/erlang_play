@@ -17,6 +17,7 @@
 -export([t3/0]).
 -export([t4/0]).
 -export([t5/0]).
+-export([p/0]).
 
 s() ->
   dbg:stop_clear(),
@@ -98,3 +99,30 @@ t() ->
      {t3, t3()},
      {t4, t4()},
      {t5, t5()}].
+
+%% get a bunch of different process messages
+%% (no match required)
+p() ->
+    dbg:stop_clear(),
+    Pid = spawn(fun() -> f(fun f/1) end),
+    Self = self(),
+    dbg:tracer(process, {fun(Msg, State) -> Self ! Msg, State end, state}),
+    dbg:p(Pid, [all]),
+    Pid ! message,
+    Pid ! done,
+    flush([]).
+
+f(F) ->
+    Pid = spawn(fun() -> receive X -> X end end),
+    link(Pid),
+    unlink(Pid),
+    Pid ! anything,
+
+    receive
+        done ->
+            io:format("f done~n"),
+            ok;
+        _ ->
+            io:format("f called~n"),
+            F(F)
+    end.
