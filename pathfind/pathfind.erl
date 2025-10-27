@@ -1,16 +1,24 @@
 -module(pathfind).
 
+-export([start_proc/3]).
+-export([reg_name/2]).
 -export([path1/0]).
 -export([path2/0]).
 -export([path3/0]).
 -export([path4/0]).
+-export([path4_simplified/0]).
 
 
 start_proc(X, Y, Plotter) ->
     Self = self(),
     P = spawn(fun() -> p({X, Y, [], Self, Plotter}) end),
-    io:format("~p,~p is ~p~n", [X, Y, P]),
+    Name = reg_name(X, Y),
+    Return = erlang:register(Name, P),
+    io:format("~p,~p is ~p, ~p [~p]~n", [X, Y, P, Name, Return]),
     P.
+
+reg_name(X, Y) ->
+  list_to_atom(lists:flatten(io_lib:format("p_~p_~p", [X, Y]))).
 
 wait() ->
     receive
@@ -20,19 +28,46 @@ wait() ->
         failed
     end.
 
+-define(ADD, n).
+-define(DEL, d).
+
+p(State = {X, Y, done}) ->
+    receive {start, X_, Y_} ->
+        io:format("~p,~p is done, ignoring ~p,~p~n", [X, Y, X_, Y_]),
+        p(State)
+    after 1000 ->
+        io:format("~p ended done~n", [self()])
+    end;
 p(State = {X, Y, N, P, Plotter}) ->
+    io:format("~p,~p (~p) listening ...~n", [X, Y, self()]),
     receive
-        {n, NX, NY, NPid} ->
-            p({X, Y, [{NX, NY, NPid} | N], P, Plotter});
+        {?ADD, NX, NY, NPid} ->
+            N2 = [{NX, NY, NPid} | N],
+            io:format("~p (~p, ~p) adds ~p,~p (~p): ~p~n", [self(), X, Y, NX, NY, NPid, N2]),
+            p({X, Y, N2, P, Plotter});
+        {?DEL, DX, DY, DPid} ->
+            N2 = lists:filter(fun({X_, Y_, Pid_})
+                                when DX == X_,
+                                     DY == Y_,
+                                     DPid == Pid_ ->
+                                      false;
+                                 (_) ->
+                                      true
+                              end,
+                              N),
+            io:format("~p (~p, ~p) deletes ~p,~p (~p): ~p~n", [self(), X, Y, DX, DY, DPid, N2]),
+            p({X, Y, N2, P, Plotter});
         {start, X_, Y_} when X_ == X, Y_== Y ->
             Plotter ! {X, Y},
-            P ! {done, X, Y};
+            P ! {done, X, Y},
+            p({X, Y, done});
         {start, X_, Y_} ->
             Plotter ! {X, Y},
             io:format("~p,~p: ~p,~p~n", [X, Y, X_, Y_]),
-            path_(X_, Y_, State)
+            path_(X_, Y_, State),
+            p({X, Y, done})
     after 1000 ->
-            io:format("~p ended~n", [self()])
+            io:format("~p ended listening~n", [self()])
     end.
 
 plot(G) ->
@@ -195,5 +230,34 @@ path4() ->
     P3_3 ! {n, 3, 2, P3_2},
 
     P1_1 ! {start, 1, 3},
+
+    wait().
+
+path4_simplified() ->
+    Plotter = spawn(fun() -> plot([{1, 1}]) end),
+    io:format("Self is ~p~n", [self()]),
+    io:format("Plotter is ~p~n", [Plotter]),
+
+    % ┌───────────────┐
+    % │1,3   2,3   3,3│
+    % ├──────────┐    │
+    % │1,2   2,2 │ 3,2│
+    % │    ──────┘    │
+    % │1,1   2,1   3,1│
+    % └───────────────┘
+
+    graph:create(3, 3, Plotter),
+    graph:disconnect(1, 3, 1, 2),
+    graph:disconnect(2, 3, 2, 2),
+    graph:disconnect(2, 2, 3, 2),
+    graph:disconnect(2, 2, 2, 1),
+
+    timer:sleep(10),
+
+    io:format("~p~n", [registered()]),
+
+    timer:sleep(10),
+
+    p_1_1 ! {start, 1, 3},
 
     wait().
