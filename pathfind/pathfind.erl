@@ -7,6 +7,7 @@
 -export([path3/0]).
 -export([path4/0]).
 -export([path4_simplified/0]).
+-export([path4_remote/0]).
 
 
 start_proc(X, Y, Plotter) ->
@@ -251,6 +252,38 @@ path4_simplified() ->
     graph:disconnect(2, 3, 2, 2),
     graph:disconnect(2, 2, 3, 2),
     graph:disconnect(2, 2, 2, 1),
+
+    timer:sleep(10),
+
+    io:format("~p~n", [registered()]),
+
+    timer:sleep(10),
+
+    p_1_1 ! {start, 1, 3},
+
+    wait().
+
+
+path4_remote() ->
+    Plotter = {plot, 'plot@a'},
+    io:format("Self is ~p~n", [self()]),
+    io:format("Plotter is ~p~n", [Plotter]),
+
+    % ┌───────────────┐
+    % │1,3   2,3   3,3│
+    % ├──────────┐    │
+    % │1,2   2,2 │ 3,2│
+    % │    ──────┘    │
+    % │1,1   2,1   3,1│
+    % └───────────────┘
+
+    graph:create(3, 3, Plotter),
+    graph:disconnect(1, 3, 1, 2),
+    graph:disconnect(2, 3, 2, 2),
+    graph:disconnect(2, 2, 3, 2),
+    graph:disconnect(2, 2, 2, 1),
+
+    Plotter ! {graph, 3, 3},
 
     timer:sleep(10),
 
