@@ -1,6 +1,7 @@
 -module(plot).
 
 -export([plot/0]).
+-export([wall/5]).
 
 plot() ->
     register(plot, self()),
@@ -13,7 +14,7 @@ plot() ->
 
     plot_(1),
 
-    timer:sleep(3000),
+    timer:sleep(500),
 
     io:put_chars([27, $[, $?, "1049", $l]),
 
@@ -23,8 +24,10 @@ plot_(N) ->
     receive
         {graph, W, H} ->
             graph(W, H),
-            plot_(N),
-            timer:sleep(500);
+            plot_(N);
+        {wall, Orientation, W, H, X, Y} ->
+            wall(Orientation, W, H, X, Y),
+            plot_(N);
         {X, Y} ->
             step(X, Y, N),
             plot_(N + 1);
@@ -59,6 +62,13 @@ graph(W, H) ->
     Rows = [Row || _ <- lists:seq(1, (H * 2) + 1)],
 
     io:put_chars([Top, Rows, Bot]).
+
+wall(h, _W, H, X, Y) ->
+    YStr = integer_to_list(10 + 2 + (H * 2) - (Y * 2) - 1),
+    XStr = integer_to_list(1 + (X - 1) * 6 + 1),
+    io:put_chars([27, $[, YStr, $;, XStr, $H]),
+    io:put_chars([?H || _ <- lists:seq(1, 6)]).
+    %io:put_chars([?H || _ <- lists:seq(1, 50)]).
 
 step(XInt, YInt, N) ->
     Col = integer_to_list(2 +  ((XInt - 1) * 6)),
