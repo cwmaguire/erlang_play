@@ -22,14 +22,14 @@ plot() ->
 
 plot_(N) ->
     receive
-        {graph, W, H} ->
+        {graph, W, H} -> %% TODO save the height in the state
             graph(W, H),
             plot_(N);
         {wall, Orientation, W, H, X, Y} ->
             wall(Orientation, W, H, X, Y),
             plot_(N);
         {X, Y} ->
-            step(X, Y, N),
+            step(X, Y, N), %% TODO pass the height
             plot_(N + 1);
         clear ->
             clear(),
@@ -78,7 +78,7 @@ wall(v, _W, H, X, Y) ->
 
 step(XInt, YInt, N) ->
     Col = integer_to_list(2 +  ((XInt - 1) * 6)),
-    Row = integer_to_list(10 + 8 - (YInt * 2)),
+    Row = integer_to_list(10 + 8 - (YInt * 2)),  %% TODO replace "8" with ((height * 2) + 2)
     NStr = integer_to_list(N),
 
     io:put_chars([27, $[, Row, $;, Col, $H]),
@@ -86,11 +86,11 @@ step(XInt, YInt, N) ->
 
     Y2Str = integer_to_list(20 + N),
     X2Str = "1",
-    io:put_chars([27, $[, Y2Str, $;, X2Str, $H]),
+    io:put_chars([27, $[, Y2Str, $;, X2Str, $H]).
 
-    XStr = integer_to_list(XInt),
-    YStr = integer_to_list(YInt),
-    io:put_chars([XStr, ", ", YStr, " = ", NStr]).
+    %XStr = integer_to_list(XInt),
+    %YStr = integer_to_list(YInt),
+    %io:put_chars([XStr, ", ", YStr, " = ", NStr]).
 
 clear() ->
     io:put_chars([27, $[, $2, $J]).
