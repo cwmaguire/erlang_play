@@ -67,7 +67,7 @@ p(State = {X, Y, N, P, Plotter}) ->
             io:format("~p,~p: ~p,~p~n", [X, Y, X_, Y_]),
             path_(X_, Y_, State),
             p({X, Y, done})
-    after 1000 ->
+    after 5000 ->
             io:format("~p ended listening~n", [self()])
     end.
 
@@ -255,7 +255,7 @@ path4_simplified() ->
 
     timer:sleep(10),
 
-    io:format("~p~n", [registered()]),
+    %io:format("~p~n", [registered()]),
 
     timer:sleep(10),
 
@@ -285,11 +285,11 @@ path4_remote() ->
 
     Plotter ! {graph, 3, 3},
 
-    timer:sleep(10),
+    %timer:sleep(10),
 
-    io:format("~p~n", [registered()]),
+    %io:format("~p~n", [registered()]),
 
-    timer:sleep(10),
+    timer:sleep(2000),
 
     p_1_1 ! {start, 1, 3},
 
