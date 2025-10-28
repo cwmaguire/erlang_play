@@ -288,6 +288,7 @@ path4_remote() ->
     Plotter ! {wall, h, 3, 3, 1, 2},
     Plotter ! {wall, h, 3, 3, 2, 1},
     Plotter ! {wall, h, 3, 3, 2, 2},
+    Plotter ! {wall, v, 3, 3, 2, 2},
 
     %timer:sleep(10),
 
