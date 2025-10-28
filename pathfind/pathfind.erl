@@ -25,7 +25,7 @@ wait() ->
     receive
         {done, X, Y} ->
             io:format("Found ~p, ~p~n", [X, Y])
-    after 1000 ->
+    after 3000 ->
         failed
     end.
 
@@ -283,6 +283,7 @@ path4_remote() ->
     graph:disconnect(2, 2, 3, 2),
     graph:disconnect(2, 2, 2, 1),
 
+    Plotter ! clear,
     Plotter ! {graph, 3, 3},
 
     %timer:sleep(10),

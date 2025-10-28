@@ -11,7 +11,7 @@ plot() ->
 
     io:put_chars("here"),
 
-    plot_(0),
+    plot_(1),
 
     timer:sleep(3000),
 
@@ -27,9 +27,14 @@ plot_(N) ->
             timer:sleep(500);
         {X, Y} ->
             step(X, Y, N),
-            plot_(N + 1)
-    after 5000 ->
+            plot_(N + 1);
+        clear ->
+            clear(),
+            plot_(1);
+        quit ->
             io:put_chars("done")
+    %after 5000 ->
+            %io:put_chars("done")
     end.
 
 
@@ -56,9 +61,20 @@ graph(W, H) ->
     io:put_chars([Top, Rows, Bot]).
 
 step(XInt, YInt, N) ->
-    XStr = integer_to_list(2 +  ((XInt - 1) * 6)),
-    YStr = integer_to_list(10 + (YInt * 2)),
+    Col = integer_to_list(2 +  ((XInt - 1) * 6)),
+    Row = integer_to_list(10 + 8 - (YInt * 2)),
     NStr = integer_to_list(N),
 
-    io:put_chars([27, $[, YStr, $;, XStr, $H]),
-    io:format("~3.. s", [NStr]).
+    io:put_chars([27, $[, Row, $;, Col, $H]),
+    io:format("~3.. s", [NStr]),
+
+    Y2Str = integer_to_list(20 + N),
+    X2Str = "1",
+    io:put_chars([27, $[, Y2Str, $;, X2Str, $H]),
+
+    XStr = integer_to_list(XInt),
+    YStr = integer_to_list(YInt),
+    io:put_chars([XStr, ", ", YStr, " = ", NStr]).
+
+clear() ->
+    io:put_chars([27, $[, $2, $J]).
