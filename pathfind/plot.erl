@@ -12,7 +12,7 @@ plot() ->
 
     io:put_chars("here"),
 
-    plot_(1),
+    plot_(1, 0),
 
     timer:sleep(500),
 
@@ -20,20 +20,20 @@ plot() ->
 
     unregister(plot).
 
-plot_(N) ->
+plot_(N, H0) ->
     receive
-        {graph, W, H} -> %% TODO save the height in the state
+        {graph, W, H} ->
             graph(W, H),
-            plot_(N);
+            plot_(N, H);
         {wall, Orientation, W, H, X, Y} ->
             wall(Orientation, W, H, X, Y),
-            plot_(N);
+            plot_(N, H0);
         {X, Y} ->
-            step(X, Y, N), %% TODO pass the height
-            plot_(N + 1);
+            step(X, Y, N, H0),
+            plot_(N + 1, H0);
         clear ->
             clear(),
-            plot_(1);
+            plot_(1, H0);
         quit ->
             io:put_chars("done")
     %after 5000 ->
@@ -76,9 +76,9 @@ wall(v, _W, H, X, Y) ->
     io:put_chars([?V]).
     %io:put_chars([?H || _ <- lists:seq(1, 50)]).
 
-step(XInt, YInt, N) ->
+step(XInt, YInt, N, H) ->
     Col = integer_to_list(2 +  ((XInt - 1) * 6)),
-    Row = integer_to_list(10 + 8 - (YInt * 2)),  %% TODO replace "8" with ((height * 2) + 2)
+    Row = integer_to_list(10 + (H * 2) + 2 - (YInt * 2)),  %% TODO replace "8" with ((height * 2) + 2)
     NStr = integer_to_list(N),
 
     io:put_chars([27, $[, Row, $;, Col, $H]),
